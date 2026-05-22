@@ -1,6 +1,7 @@
 import express from "express";
 import { logger } from "@repo/logger";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { generateOpenApiDocument, createOpenApiExpressMiddleware } from "trpc-to-openapi";
@@ -17,13 +18,12 @@ const openApiDocument = generateOpenApiDocument(serverRouter, {
   baseUrl: env.BASE_URL.concat("/api"),
 });
 
-if (env.NODE_ENV !== "prod") {
-  app.use(
-    cors({
-      origin: "*",
-    }),
-  );
-}
+app.use(
+  cors({
+    origin: env.CORS_ORIGIN,
+    credentials: true,
+  }),
+);
 
 app.use(
   helmet({
@@ -46,6 +46,7 @@ app.use(
   }),
 );
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   return res.json({ message: "Streamyst is up and running..." });
