@@ -7,7 +7,7 @@ import { generateOpenApiDocument, createOpenApiExpressMiddleware } from "trpc-to
 import { apiReference } from "@scalar/express-api-reference";
 
 import { serverRouter, createContext } from "@repo/trpc/server";
-
+import helmet from "helmet";
 import { env } from "./env";
 
 export const app = express();
@@ -25,6 +25,26 @@ if (env.NODE_ENV !== "prod") {
   );
 }
 
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+
+    crossOriginEmbedderPolicy: false,
+
+    referrerPolicy: {
+      policy: "strict-origin-when-cross-origin",
+    },
+
+    hsts:
+      env.NODE_ENV === "prod"
+        ? {
+            maxAge: 31536000,
+            includeSubDomains: true,
+            preload: true,
+          }
+        : false,
+  }),
+);
 app.use(express.json());
 
 app.get("/", (req, res) => {
