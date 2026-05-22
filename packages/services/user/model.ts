@@ -22,7 +22,8 @@ export type CreateUserWithEmailandPasswordInputModelType = z.infer<
 export const createUserWithEmailandPasswordOutputModel = z.object({
   id: z.uuid().describe("Newly created User Id"),
   access_token: z.string().describe("User Access Token"),
-  refresh_token: z.string().describe("User Access Token"),
+  refresh_token: z.string().describe("User Refresh Token"),
+  csrfToken: z.string().describe("User CSRF Token"),
 });
 
 export type CreateUserWithEmailandPasswordOutputModelType = z.infer<
@@ -61,6 +62,7 @@ export const loginUserWithEmailandPasswordOutputModel = z.object({
   id: z.uuid().describe("User Id"),
   access_token: z.string().describe("User access token"),
   refresh_token: z.string().describe("User refresh token"),
+  csrfToken: z.string().describe("User csrf token"),
 });
 export type LoginUserWithEmailandPasswordOutputModelType = z.infer<
   typeof loginUserWithEmailandPasswordOutputModel

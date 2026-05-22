@@ -111,10 +111,12 @@ class UserService {
       .update(usersTable)
       .set({ refreshToken: refreshtokenObj.token })
       .where(eq(usersTable.id, userId));
+    const csrfToken = randomBytes(32).toString("hex");
     return {
       id: userId,
       access_token: accesstokenObj.token,
       refresh_token: refreshtokenObj.token,
+      csrfToken,
     };
   }
   public async loginUserWithEmailandPassword(
@@ -150,11 +152,12 @@ class UserService {
       .update(usersTable)
       .set({ refreshToken: refreshTokenObj.token })
       .where(eq(usersTable.id, user.id));
-
+    const csrfToken = randomBytes(32).toString("hex");
     return {
       id: user.id,
       access_token: accessTokenObj.token,
       refresh_token: refreshTokenObj.token,
+      csrfToken: csrfToken,
     };
   }
   public async logout(payload: LogoutUserInputModelType): Promise<LogoutUserOutputModelType> {

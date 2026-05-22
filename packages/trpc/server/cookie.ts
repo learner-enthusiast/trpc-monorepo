@@ -6,7 +6,7 @@ const ONE_DAY = 24 * ONE_HOUR;
 const ONE_MONTH = 30 * ONE_DAY;
 const ONE_YEAR = 12 * ONE_MONTH;
 
-const defaultCookieOptions: CookieOptions = {
+export const defaultCookieOptions: CookieOptions = {
   path: "/",
   httpOnly: true,
   secure: false,
@@ -58,4 +58,16 @@ export function getAuthenticationCookie(
 
 export function clearAuthenticationCookie(ctx: TRPCContext, AUTHENTICATION_COOKIE_NAME: string) {
   ctx.clearCookie(AUTHENTICATION_COOKIE_NAME);
+}
+export const CSRF_COOKIE_NAME = "csrf_token";
+
+export function setCsrfCookie(ctx: TRPCContext, token: string) {
+  ctx.createCookie(CSRF_COOKIE_NAME, token, {
+    ...defaultCookieOptions,
+    httpOnly: false,
+  });
+}
+
+export function getCsrfCookie(ctx: TRPCContext) {
+  return ctx.getCookie(CSRF_COOKIE_NAME);
 }

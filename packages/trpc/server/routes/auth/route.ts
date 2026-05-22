@@ -23,6 +23,7 @@ import {
   AUTHENTICATION_COOKIE_NAME_ACCESS,
   AUTHENTICATION_COOKIE_NAME_REFRESH,
   clearAuthenticationCookie,
+  defaultCookieOptions,
   getAuthenticationCookie,
   setAuthenticationCookie,
 } from "../../cookie";
@@ -38,27 +39,36 @@ export const authRouter = router({
     .output(createUserWithEmailandPasswordOutputModel)
     .mutation(async ({ input, ctx }) => {
       const { fullName, email, password } = input;
-      const { id, access_token, refresh_token } = await userService.createUserWithEmailandPassword({
-        fullName,
-        email,
-        password,
-      });
+      const { id, access_token, refresh_token, csrfToken } =
+        await userService.createUserWithEmailandPassword({
+          fullName,
+          email,
+          password,
+        });
       setAuthenticationCookie(ctx, access_token, AUTHENTICATION_COOKIE_NAME_ACCESS);
       setAuthenticationCookie(ctx, refresh_token, AUTHENTICATION_COOKIE_NAME_REFRESH);
-      return { id, access_token, refresh_token };
+      ctx.createCookie("csrf_token", csrfToken, {
+        ...defaultCookieOptions,
+        httpOnly: false,
+      });
+      return { id, access_token, refresh_token, csrfToken };
     }),
   loginUserWithEmailandPassword: publicProcedure
     .meta({ openapi: { method: "POST", path: getPath("/login"), tags: TAGS } })
     .input(loginUserWithEmailandPasswordInputModel)
     .output(loginUserWithEmailandPasswordOutputModel)
     .mutation(async ({ input, ctx }) => {
-      const { id, access_token, refresh_token } =
+      const { id, access_token, refresh_token, csrfToken } =
         await userService.loginUserWithEmailandPassword(input);
 
       setAuthenticationCookie(ctx, access_token, AUTHENTICATION_COOKIE_NAME_ACCESS);
       setAuthenticationCookie(ctx, refresh_token, AUTHENTICATION_COOKIE_NAME_REFRESH);
+      ctx.createCookie("csrf_token", csrfToken, {
+        ...defaultCookieOptions,
+        httpOnly: false,
+      });
 
-      return { id, access_token, refresh_token };
+      return { id, access_token, refresh_token, csrfToken };
     }),
 
   logout: authenticatedProcedure
@@ -69,7 +79,7 @@ export const authRouter = router({
       await userService.logout({ userId: ctx.user });
       clearAuthenticationCookie(ctx, AUTHENTICATION_COOKIE_NAME_ACCESS);
       clearAuthenticationCookie(ctx, AUTHENTICATION_COOKIE_NAME_REFRESH);
-
+      ctx.clearCookie("csrf_token", { ...defaultCookieOptions, httpOnly: false });
       return { success: true };
     }),
   refreshToken: publicProcedure

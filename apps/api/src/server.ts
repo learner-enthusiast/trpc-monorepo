@@ -47,7 +47,17 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use((req, res, next) => {
+  const start = Date.now();
 
+  res.on("finish", () => {
+    logger.info(`${req.method} ${req.originalUrl} -> ${res.statusCode}`, {
+      durationMs: Date.now() - start,
+    });
+  });
+
+  next();
+});
 app.get("/", (req, res) => {
   return res.json({ message: "Streamyst is up and running..." });
 });

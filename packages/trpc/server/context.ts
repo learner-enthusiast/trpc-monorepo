@@ -5,6 +5,7 @@ export interface TRPCContext {
   createCookie: ReturnType<typeof createCookieFactory>;
   getCookie: ReturnType<typeof getCookieFactory>;
   clearCookie: ReturnType<typeof clearCookieFactory>;
+  getHeader: (name: string) => string | undefined;
 }
 
 export async function createContext({
@@ -15,6 +16,10 @@ export async function createContext({
     createCookie: createCookieFactory(res),
     getCookie: getCookieFactory(req),
     clearCookie: clearCookieFactory(res),
+    getHeader: (name: string) => {
+      const value = req.headers[name.toLowerCase()];
+      return Array.isArray(value) ? value[0] : value;
+    },
   };
   return ctx;
 }
