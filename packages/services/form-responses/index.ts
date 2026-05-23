@@ -354,6 +354,15 @@ class FormResponseService {
     return responses.map((r) => {
       const respAnswers = answersByResponseId.get(r.id) ?? [];
 
+      // sort by question order (fallback to a big number if missing)
+      const sortedAnswers = [...respAnswers].sort((a, b) => {
+        const qa = questionById.get(a.questionId);
+        const qb = questionById.get(b.questionId);
+        const orderA = qa?.order ?? Number.MAX_SAFE_INTEGER;
+        const orderB = qb?.order ?? Number.MAX_SAFE_INTEGER;
+        return orderA - orderB;
+      });
+
       return {
         id: r.id,
         formId: r.formId,
@@ -362,7 +371,7 @@ class FormResponseService {
         metadata: (r.metadata as unknown) ?? null,
         completedAt: r.completedAt ? r.completedAt.toISOString() : null,
         createdAt: r.createdAt.toISOString(),
-        answers: respAnswers.map((a) => {
+        answers: sortedAnswers.map((a) => {
           const q = questionById.get(a.questionId);
           if (!q) throw new Error("Question missing for an answer");
 
