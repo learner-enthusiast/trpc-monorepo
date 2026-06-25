@@ -34,3 +34,13 @@ export async function handleLogout() {
     // session cookie cleared — redirect if you want
     window.location.href = '/'
 }
+
+export type SocialProvider = 'google' | 'github'
+export async function signInWithSocial(opts: {
+    provider: SocialProvider
+    callbackURL?: string
+}) {
+    return signIn.social({
+        provider: opts.provider,
+    })
+}

@@ -13,8 +13,10 @@ import { toast } from 'sonner'
 
 import {
     signInWithEmail,
+    signInWithSocial,
     signOut,
     signUpWithEmail,
+    SocialProvider,
     useAuthSession,
 } from '~/lib/auth-client'
 import { normalizeAuthError, type AppErrorPayload } from '~/lib/error'
@@ -42,6 +44,10 @@ type AuthContextValue = {
         NonNullable<Awaited<ReturnType<typeof signUpWithEmail>>['data']>
     >
     signOut: (options?: { redirectTo?: string }) => Promise<void>
+    signInWithSocial: (opts: {
+        provider: SocialProvider
+        callbackURL?: string
+    }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -110,6 +116,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         [refetch, router]
     )
 
+    // Inside AuthProvider
+    const handleSignInWithSocial = useCallback(
+        async (opts: { provider: SocialProvider; callbackURL?: string }) => {
+            const { error } = await signInWithSocial(opts)
+            if (error) {
+                const normalized = normalizeAuthError(error)
+                toast.error(normalized.message)
+                throw normalized
+            }
+            // success → browser navigates away to Google/GitHub
+        },
+        []
+    )
     const value = useMemo<AuthContextValue>(
         () => ({
             session,
@@ -121,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             signIn: handleSignIn,
             signUp: handleSignUp,
             signOut: handleSignOut,
+            signInWithSocial: handleSignInWithSocial,
         }),
         [
             session,
@@ -130,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             handleSignIn,
             handleSignUp,
             handleSignOut,
+            handleSignInWithSocial,
         ]
     )
 
