@@ -1,41 +1,49 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { OpenApiMeta } from "trpc-to-openapi";
-import * as JWT from "jsonwebtoken";
+import { AppError, toTRPCError } from "@repo/errors";
+import { logger } from "@repo/logger";
 import { createContext } from "./context";
-import {
-  AUTHENTICATION_COOKIE_NAME_ACCESS,
-  getAuthenticationCookie,
-  getCsrfCookie,
-} from "./cookie";
-import { GenerateUSerTokenPayload } from "@repo/services/user/model";
-import { env } from "@repo/services/env";
 
-export const tRPCContext = initTRPC.meta<OpenApiMeta>().context<typeof createContext>().create({});
+export const tRPCContext = initTRPC
+  .meta<OpenApiMeta>()
+  .context<typeof createContext>()
+  .create({
+    errorFormatter({ shape, error }) {
+      const appError = error.cause instanceof AppError ? error.cause : null;
+
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          appCode: appError?.code,
+          details: appError?.details,
+        },
+      };
+    },
+  });
+
+const baseProcedure = tRPCContext.procedure.use(async ({ path, type, next }) => {
+  try {
+    return await next();
+  } catch (error) {
+    logger.error("tRPC procedure failed", { path, type, error });
+    throw toTRPCError(error);
+  }
+});
 
 export const router = tRPCContext.router;
+export const publicProcedure = baseProcedure;
 
-export const publicProcedure = tRPCContext.procedure;
-export const authenticatedProcedure = tRPCContext.procedure.use((options) => {
-  const { ctx } = options;
-
-  const userToken = getAuthenticationCookie(ctx, AUTHENTICATION_COOKIE_NAME_ACCESS);
-  if (!userToken) throw new Error("User is not logged in");
-  const decoded = JWT.verify(userToken, env.ACCESS_TOKEN_SECRET) as GenerateUSerTokenPayload;
-
-  return options.next({
-    ctx: { ...ctx, user: decoded.id },
-  });
-});
-export const csrfProtectedProcedure = authenticatedProcedure.use((options) => {
-  // Only require CSRF for mutations
-  if (options.type !== "mutation") return options.next();
-
-  const csrfCookie = getCsrfCookie(options.ctx);
-  const csrfHeader = options.ctx.getHeader("x-csrf-token");
-
-  if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "CSRF token mismatch" });
+export const authenticatedProcedure = baseProcedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Not authenticated",
+      cause: new AppError({ code: "UNAUTHORIZED", message: "Not authenticated" }),
+    });
   }
 
-  return options.next();
+  return next({
+    ctx: { ...ctx, user: ctx.user.id, session: ctx.session! },
+  });
 });

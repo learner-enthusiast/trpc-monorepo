@@ -2,6 +2,8 @@ import express from "express";
 import { logger } from "@repo/logger";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "@repo/auth";
 
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { generateOpenApiDocument, createOpenApiExpressMiddleware } from "trpc-to-openapi";
@@ -10,6 +12,7 @@ import { apiReference } from "@scalar/express-api-reference";
 import { serverRouter, createContext } from "@repo/trpc/server";
 import helmet from "helmet";
 import { env } from "./env";
+import { errorHandler } from "./middleware/error-handler";
 
 export const app = express();
 const openApiDocument = generateOpenApiDocument(serverRouter, {
@@ -24,7 +27,7 @@ app.use(
     credentials: true,
   }),
 );
-
+app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -89,5 +92,7 @@ app.use(
     createContext,
   }),
 );
+
+app.use(errorHandler);
 
 export default app;

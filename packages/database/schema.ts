@@ -1,1 +1,1 @@
-export * from "./models/user";
+export * from "./models/auth-schema";

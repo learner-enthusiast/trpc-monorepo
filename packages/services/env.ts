@@ -7,7 +7,8 @@ const envSchema = z.object({
   ACCESS_TOKEN_SECRET: z.string().min(32, "ACCESS_TOKEN_SECRET must be at least 32 chars"),
   REFRESH_TOKEN_SECRET: z.string().min(32, "REFRESH_TOKEN_SECRET must be at least 32 chars"),
   ACCESS_TOKEN_EXPIRY: z.string().default("15m"),
-
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
   REFRESH_TOKEN_EXPIRY: z.string().default("30d"),
 });
 
